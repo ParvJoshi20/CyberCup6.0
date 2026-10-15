@@ -105,6 +105,63 @@ _PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
 )
 
 
+
+
+# Spoken / obfuscated digit sequences. These are intentionally bounded to
+# contiguous digit-word runs; ordinary prose is not converted wholesale.
+_DIGIT_TOKEN = re.compile(
+    r"(?i)(?<!\w)(?:zero|oh|one|two|three|four|five|six|seven|eight|nine|[0-9])(?!\w)"
+)
+_DIGIT_GAP = re.compile(r"^[\s,;:.\-–—…]*$")
+
+
+def _spoken_digit_findings(text: str) -> list[Finding]:
+    """Find long runs of digit words/digits while retaining original spans.
+
+    12 tokens are treated as an Aadhaar candidate, 13–19 as a payment-card
+    candidate, and 10 as a phone candidate. These are format candidates only.
+    """
+    tokens = list(_DIGIT_TOKEN.finditer(text))
+    if not tokens:
+        return []
+
+    runs: list[list[re.Match[str]]] = []
+    current = [tokens[0]]
+    for token in tokens[1:]:
+        previous = current[-1]
+        gap = text[previous.end():token.start()]
+        if _DIGIT_GAP.fullmatch(gap):
+            current.append(token)
+        else:
+            runs.append(current)
+            current = [token]
+    runs.append(current)
+
+    findings: list[Finding] = []
+    for run in runs:
+        # Avoid converting incidental short number words in ordinary prose.
+        count = len(run)
+        if count not in (10, 12) and not 13 <= count <= 19:
+            continue
+
+        start, end = run[0].start(), run[-1].end()
+        if count == 12:
+            category = "aadhaar_candidate"
+        elif count == 10:
+            category = "phone_candidate"
+        else:
+            category = "payment_card_candidate"
+
+        findings.append({
+            "type": category,
+            "start": start,
+            "end": end,
+            "match": text[start:end],
+        })
+
+    return findings
+
+
 # ---------------------------------------------------------------------------
 # Aadhaar checksum helper
 # ---------------------------------------------------------------------------
@@ -175,20 +232,7 @@ def is_aadhaar_checksum_valid(value: str) -> bool:
 # ---------------------------------------------------------------------------
 
 def detect_sensitive_data(text: str) -> list[Finding]:
-    """Find potential sensitive-data patterns in text.
-
-    Each finding contains:
-      - type: stable category identifier
-      - start: inclusive character offset in the original string
-      - end: exclusive character offset in the original string
-      - match: matched substring
-
-    Findings are ordered by start, end, and type. Duplicate findings with
-    the same category and span are removed.
-
-    Aadhaar matches are reported as candidates regardless of checksum result.
-    This is intentional: security policy may still choose to mask them.
-    """
+    """Detect sensitive-data candidates and resolve overlapping numeric matches."""
     if not isinstance(text, str):
         raise TypeError("text must be a string")
 
@@ -207,21 +251,66 @@ def detect_sensitive_data(text: str) -> list[Finding]:
                 continue
 
             seen.add(key)
-            findings.append(
-                {
-                    "type": category,
-                    "start": start,
-                    "end": end,
-                    "match": match.group(0),
-                }
+            findings.append({
+                "type": category,
+                "start": start,
+                "end": end,
+                "match": match.group(0),
+            })
+
+    # Also recognize digit sequences spoken as words (e.g. "one nine two...").
+    for finding in _spoken_digit_findings(text):
+        key = (finding["type"], finding["start"], finding["end"])
+        if key not in seen:
+            seen.add(key)
+            findings.append(finding)
+
+    # First, remove Aadhaar candidates contained within a longer card match.
+    card_findings = [
+        f for f in findings
+        if f["type"] == "payment_card_candidate"
+    ]
+
+    filtered = []
+    for finding in findings:
+        if finding["type"] == "aadhaar_candidate":
+            contained_in_card = any(
+                card["start"] <= finding["start"]
+                and finding["end"] <= card["end"]
+                and (
+                    card["start"] < finding["start"]
+                    or finding["end"] < card["end"]
+                )
+                for card in card_findings
             )
+            if contained_in_card:
+                continue
 
-    findings.sort(
-        key=lambda finding: (
-            finding["start"],
-            finding["end"],
-            finding["type"],
-        )
+        filtered.append(finding)
+
+    # Then suppress phone candidates overlapping Aadhaar or card candidates.
+    priority_findings = [
+        f for f in filtered
+        if f["type"] in {
+            "aadhaar_candidate",
+            "payment_card_candidate",
+        }
+    ]
+
+    result = []
+    for finding in filtered:
+        if finding["type"] == "phone_candidate":
+            overlaps_priority = any(
+                finding["start"] < priority["end"]
+                and priority["start"] < finding["end"]
+                for priority in priority_findings
+            )
+            if overlaps_priority:
+                continue
+
+        result.append(finding)
+
+    result.sort(
+        key=lambda f: (f["start"], f["end"], f["type"])
     )
-
-    return findings
+    return result

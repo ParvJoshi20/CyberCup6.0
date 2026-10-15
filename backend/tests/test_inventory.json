@@ -1,0 +1,350 @@
+{
+  "project": "CyberCup 6.0 - AegisGate",
+  "format_version": 1,
+  "source": "pytest --collect-only",
+  "test_count": 57,
+  "test_cases": [
+    {
+      "id": "tests/test_chat_security.py::test_harmless_request_allowed",
+      "file": "tests/test_chat_security.py",
+      "test_name": "test_harmless_request_allowed",
+      "class_name": null
+    },
+    {
+      "id": "tests/test_chat_security.py::test_api_key_like_input_is_blocked",
+      "file": "tests/test_chat_security.py",
+      "test_name": "test_api_key_like_input_is_blocked",
+      "class_name": null
+    },
+    {
+      "id": "tests/test_chat_security.py::test_prompt_injection_is_blocked_before_provider_call",
+      "file": "tests/test_chat_security.py",
+      "test_name": "test_prompt_injection_is_blocked_before_provider_call",
+      "class_name": null
+    },
+    {
+      "id": "tests/test_chat_security.py::test_blocked_requests_never_invoke_provider",
+      "file": "tests/test_chat_security.py",
+      "test_name": "test_blocked_requests_never_invoke_provider",
+      "class_name": null
+    },
+    {
+      "id": "tests/test_chat_security.py::test_sanitized_messages_not_original_pass_to_provider",
+      "file": "tests/test_chat_security.py",
+      "test_name": "test_sanitized_messages_not_original_pass_to_provider",
+      "class_name": null
+    },
+    {
+      "id": "tests/test_chat_security.py::test_echo_provider_response_is_returned",
+      "file": "tests/test_chat_security.py",
+      "test_name": "test_echo_provider_response_is_returned",
+      "class_name": null
+    },
+    {
+      "id": "tests/test_chat_security.py::test_scripted_leaky_provider_output_is_redacted_or_blocked",
+      "file": "tests/test_chat_security.py",
+      "test_name": "test_scripted_leaky_provider_output_is_redacted_or_blocked",
+      "class_name": null
+    },
+    {
+      "id": "tests/test_chat_security.py::test_output_inspection_failure_blocks_uninspected_output",
+      "file": "tests/test_chat_security.py",
+      "test_name": "test_output_inspection_failure_blocks_uninspected_output",
+      "class_name": null
+    },
+    {
+      "id": "tests/test_chat_security.py::test_provider_failure_produces_safe_error",
+      "file": "tests/test_chat_security.py",
+      "test_name": "test_provider_failure_produces_safe_error",
+      "class_name": null
+    },
+    {
+      "id": "tests/test_chat_security.py::test_audit_events_do_not_contain_raw_prompts_or_secret_values",
+      "file": "tests/test_chat_security.py",
+      "test_name": "test_audit_events_do_not_contain_raw_prompts_or_secret_values",
+      "class_name": null
+    },
+    {
+      "id": "tests/test_chat_security.py::test_unknown_provider_is_rejected",
+      "file": "tests/test_chat_security.py",
+      "test_name": "test_unknown_provider_is_rejected",
+      "class_name": null
+    },
+    {
+      "id": "tests/test_chat_security.py::test_request_validation_still_works",
+      "file": "tests/test_chat_security.py",
+      "test_name": "test_request_validation_still_works",
+      "class_name": null
+    },
+    {
+      "id": "tests/test_chat_security.py::test_input_inspection_failure_never_calls_provider",
+      "file": "tests/test_chat_security.py",
+      "test_name": "test_input_inspection_failure_never_calls_provider",
+      "class_name": null
+    },
+    {
+      "id": "tests/test_chat_security.py::test_valid_empty_findings_list_is_allowed",
+      "file": "tests/test_chat_security.py",
+      "test_name": "test_valid_empty_findings_list_is_allowed",
+      "class_name": null
+    },
+    {
+      "id": "tests/test_chat_security.py::test_none_findings_block_without_provider_call",
+      "file": "tests/test_chat_security.py",
+      "test_name": "test_none_findings_block_without_provider_call",
+      "class_name": null
+    },
+    {
+      "id": "tests/test_chat_security.py::test_unexpected_return_type_blocks_without_provider_call",
+      "file": "tests/test_chat_security.py",
+      "test_name": "test_unexpected_return_type_blocks_without_provider_call",
+      "class_name": null
+    },
+    {
+      "id": "tests/test_chat_security.py::test_malformed_finding_object_blocks_without_provider_call",
+      "file": "tests/test_chat_security.py",
+      "test_name": "test_malformed_finding_object_blocks_without_provider_call",
+      "class_name": null
+    },
+    {
+      "id": "tests/test_chat_security.py::test_invalid_category_blocks_without_provider_call",
+      "file": "tests/test_chat_security.py",
+      "test_name": "test_invalid_category_blocks_without_provider_call",
+      "class_name": null
+    },
+    {
+      "id": "tests/test_chat_security.py::test_policy_rejects_malformed_findings",
+      "file": "tests/test_chat_security.py",
+      "test_name": "test_policy_rejects_malformed_findings",
+      "class_name": null
+    },
+    {
+      "id": "tests/test_chat_security.py::test_exception_message_secret_does_not_appear_in_logs_or_client_response",
+      "file": "tests/test_chat_security.py",
+      "test_name": "test_exception_message_secret_does_not_appear_in_logs_or_client_response",
+      "class_name": null
+    },
+    {
+      "id": "tests/test_chat_security.py::test_expected_milestone_1_tests_still_pass",
+      "file": "tests/test_chat_security.py",
+      "test_name": "test_expected_milestone_1_tests_still_pass",
+      "class_name": null
+    },
+    {
+      "id": "tests/test_chat_security.py::test_roleplay_prompt_injection_is_blocked_before_provider_call",
+      "file": "tests/test_chat_security.py",
+      "test_name": "test_roleplay_prompt_injection_is_blocked_before_provider_call",
+      "class_name": null
+    },
+    {
+      "id": "tests/test_errors.py::TestNotFoundRoute::test_unknown_route_returns_404",
+      "file": "tests/test_errors.py",
+      "test_name": "test_unknown_route_returns_404",
+      "class_name": "TestNotFoundRoute"
+    },
+    {
+      "id": "tests/test_errors.py::TestNotFoundRoute::test_404_body_has_error_envelope",
+      "file": "tests/test_errors.py",
+      "test_name": "test_404_body_has_error_envelope",
+      "class_name": "TestNotFoundRoute"
+    },
+    {
+      "id": "tests/test_errors.py::TestNotFoundRoute::test_404_has_request_id",
+      "file": "tests/test_errors.py",
+      "test_name": "test_404_has_request_id",
+      "class_name": "TestNotFoundRoute"
+    },
+    {
+      "id": "tests/test_errors.py::TestNotFoundRoute::test_404_code_is_not_found",
+      "file": "tests/test_errors.py",
+      "test_name": "test_404_code_is_not_found",
+      "class_name": "TestNotFoundRoute"
+    },
+    {
+      "id": "tests/test_errors.py::TestValidationError::test_empty_message_returns_422",
+      "file": "tests/test_errors.py",
+      "test_name": "test_empty_message_returns_422",
+      "class_name": "TestValidationError"
+    },
+    {
+      "id": "tests/test_errors.py::TestValidationError::test_422_has_standard_envelope",
+      "file": "tests/test_errors.py",
+      "test_name": "test_422_has_standard_envelope",
+      "class_name": "TestValidationError"
+    },
+    {
+      "id": "tests/test_errors.py::TestValidationError::test_422_has_request_id",
+      "file": "tests/test_errors.py",
+      "test_name": "test_422_has_request_id",
+      "class_name": "TestValidationError"
+    },
+    {
+      "id": "tests/test_errors.py::TestValidationError::test_422_does_not_echo_submitted_message",
+      "file": "tests/test_errors.py",
+      "test_name": "test_422_does_not_echo_submitted_message",
+      "class_name": "TestValidationError"
+    },
+    {
+      "id": "tests/test_errors.py::TestUnhandledException::test_crash_returns_500",
+      "file": "tests/test_errors.py",
+      "test_name": "test_crash_returns_500",
+      "class_name": "TestUnhandledException"
+    },
+    {
+      "id": "tests/test_errors.py::TestUnhandledException::test_500_has_standard_envelope",
+      "file": "tests/test_errors.py",
+      "test_name": "test_500_has_standard_envelope",
+      "class_name": "TestUnhandledException"
+    },
+    {
+      "id": "tests/test_errors.py::TestUnhandledException::test_500_has_request_id",
+      "file": "tests/test_errors.py",
+      "test_name": "test_500_has_request_id",
+      "class_name": "TestUnhandledException"
+    },
+    {
+      "id": "tests/test_errors.py::TestUnhandledException::test_500_does_not_expose_exception_text",
+      "file": "tests/test_errors.py",
+      "test_name": "test_500_does_not_expose_exception_text",
+      "class_name": "TestUnhandledException"
+    },
+    {
+      "id": "tests/test_errors.py::TestUnhandledException::test_500_server_logs_exception",
+      "file": "tests/test_errors.py",
+      "test_name": "test_500_server_logs_exception",
+      "class_name": "TestUnhandledException"
+    },
+    {
+      "id": "tests/test_errors.py::TestRequestIdHeader::test_valid_client_request_id_is_echoed",
+      "file": "tests/test_errors.py",
+      "test_name": "test_valid_client_request_id_is_echoed",
+      "class_name": "TestRequestIdHeader"
+    },
+    {
+      "id": "tests/test_errors.py::TestRequestIdHeader::test_overlong_client_request_id_is_replaced",
+      "file": "tests/test_errors.py",
+      "test_name": "test_overlong_client_request_id_is_replaced",
+      "class_name": "TestRequestIdHeader"
+    },
+    {
+      "id": "tests/test_errors.py::TestRequestIdHeader::test_special_char_request_id_is_replaced",
+      "file": "tests/test_errors.py",
+      "test_name": "test_special_char_request_id_is_replaced",
+      "class_name": "TestRequestIdHeader"
+    },
+    {
+      "id": "tests/test_health.py::TestHealthEndpoint::test_health_returns_200",
+      "file": "tests/test_health.py",
+      "test_name": "test_health_returns_200",
+      "class_name": "TestHealthEndpoint"
+    },
+    {
+      "id": "tests/test_health.py::TestHealthEndpoint::test_health_content_type_is_json",
+      "file": "tests/test_health.py",
+      "test_name": "test_health_content_type_is_json",
+      "class_name": "TestHealthEndpoint"
+    },
+    {
+      "id": "tests/test_health.py::TestHealthEndpoint::test_health_status_field_is_ok",
+      "file": "tests/test_health.py",
+      "test_name": "test_health_status_field_is_ok",
+      "class_name": "TestHealthEndpoint"
+    },
+    {
+      "id": "tests/test_health.py::TestHealthEndpoint::test_health_service_field_present",
+      "file": "tests/test_health.py",
+      "test_name": "test_health_service_field_present",
+      "class_name": "TestHealthEndpoint"
+    },
+    {
+      "id": "tests/test_health.py::TestHealthEndpoint::test_health_version_field_present",
+      "file": "tests/test_health.py",
+      "test_name": "test_health_version_field_present",
+      "class_name": "TestHealthEndpoint"
+    },
+    {
+      "id": "tests/test_health.py::TestHealthEndpoint::test_health_response_has_all_schema_fields",
+      "file": "tests/test_health.py",
+      "test_name": "test_health_response_has_all_schema_fields",
+      "class_name": "TestHealthEndpoint"
+    },
+    {
+      "id": "tests/test_schemas.py::TestChatRequestValid::test_valid_minimal_request",
+      "file": "tests/test_schemas.py",
+      "test_name": "test_valid_minimal_request",
+      "class_name": "TestChatRequestValid"
+    },
+    {
+      "id": "tests/test_schemas.py::TestChatRequestValid::test_default_model_id",
+      "file": "tests/test_schemas.py",
+      "test_name": "test_default_model_id",
+      "class_name": "TestChatRequestValid"
+    },
+    {
+      "id": "tests/test_schemas.py::TestChatRequestValid::test_default_use_rag_is_false",
+      "file": "tests/test_schemas.py",
+      "test_name": "test_default_use_rag_is_false",
+      "class_name": "TestChatRequestValid"
+    },
+    {
+      "id": "tests/test_schemas.py::TestChatRequestValid::test_default_conversation_id_is_none",
+      "file": "tests/test_schemas.py",
+      "test_name": "test_default_conversation_id_is_none",
+      "class_name": "TestChatRequestValid"
+    },
+    {
+      "id": "tests/test_schemas.py::TestChatRequestValid::test_explicit_optional_fields",
+      "file": "tests/test_schemas.py",
+      "test_name": "test_explicit_optional_fields",
+      "class_name": "TestChatRequestValid"
+    },
+    {
+      "id": "tests/test_schemas.py::TestChatRequestValid::test_message_surrounding_whitespace_is_stripped",
+      "file": "tests/test_schemas.py",
+      "test_name": "test_message_surrounding_whitespace_is_stripped",
+      "class_name": "TestChatRequestValid"
+    },
+    {
+      "id": "tests/test_schemas.py::TestChatRequestValid::test_message_at_exact_max_length_is_accepted",
+      "file": "tests/test_schemas.py",
+      "test_name": "test_message_at_exact_max_length_is_accepted",
+      "class_name": "TestChatRequestValid"
+    },
+    {
+      "id": "tests/test_schemas.py::TestChatRequestInvalid::test_empty_message_is_rejected",
+      "file": "tests/test_schemas.py",
+      "test_name": "test_empty_message_is_rejected",
+      "class_name": "TestChatRequestInvalid"
+    },
+    {
+      "id": "tests/test_schemas.py::TestChatRequestInvalid::test_whitespace_only_message_is_rejected",
+      "file": "tests/test_schemas.py",
+      "test_name": "test_whitespace_only_message_is_rejected",
+      "class_name": "TestChatRequestInvalid"
+    },
+    {
+      "id": "tests/test_schemas.py::TestChatRequestInvalid::test_tab_only_message_is_rejected",
+      "file": "tests/test_schemas.py",
+      "test_name": "test_tab_only_message_is_rejected",
+      "class_name": "TestChatRequestInvalid"
+    },
+    {
+      "id": "tests/test_schemas.py::TestChatRequestInvalid::test_overlong_message_is_rejected",
+      "file": "tests/test_schemas.py",
+      "test_name": "test_overlong_message_is_rejected",
+      "class_name": "TestChatRequestInvalid"
+    },
+    {
+      "id": "tests/test_schemas.py::TestChatRequestInvalid::test_overlong_model_id_is_rejected",
+      "file": "tests/test_schemas.py",
+      "test_name": "test_overlong_model_id_is_rejected",
+      "class_name": "TestChatRequestInvalid"
+    },
+    {
+      "id": "tests/test_schemas.py::TestChatRequestInvalid::test_overlong_conversation_id_is_rejected",
+      "file": "tests/test_schemas.py",
+      "test_name": "test_overlong_conversation_id_is_rejected",
+      "class_name": "TestChatRequestInvalid"
+    }
+  ]
+}

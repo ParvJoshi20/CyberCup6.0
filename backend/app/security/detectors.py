@@ -1,4 +1,5 @@
-﻿from __future__ import annotations
+﻿
+from __future__ import annotations
 
 from dataclasses import dataclass
 import re
@@ -20,7 +21,40 @@ _INJECTION_PATTERNS = (
     re.compile(r"ignore\s+(?:all\s+)?(?:previous|prior)\s+instructions", re.I),
     re.compile(r"reveal\s+(?:the\s+)?hidden\s+(?:system|prompt)", re.I),
     re.compile(r"override\s+(?:the\s+)?instructions", re.I),
+
+    # Unrestricted / role-play jailbreaks
+    re.compile(
+        r"\b(?:act\s+as|behave\s+as|pretend\s+to\s+be)\s+"
+        r"(?:an?\s+)?(?:unrestricted|unfiltered|rule[- ]free)\s+"
+        r"(?:system|assistant|ai|model)\b",
+        re.I,
+    ),
+    re.compile(
+        r"\b(?:unrestricted|unfiltered)\s+system\b",
+        re.I,
+    ),
+    re.compile(
+        r"\b(?:ignore|bypass|disregard|disable)\s+"
+        r"(?:all\s+)?(?:safety\s+)?(?:rules|restrictions|safeguards|policies)\b",
+        re.I,
+    ),
+
+    # Requests to disclose hidden instructions or configuration
+    re.compile(
+        r"\b(?:disclose|reveal|expose|print|dump)\s+"
+        r"(?:the\s+)?(?:hidden\s+)?"
+        r"(?:system\s+prompt|internal\s+instructions|"
+        r"confidential\s+configuration|configuration\s+values)\b",
+        re.I,
+    ),
+    re.compile(
+        r"\b(?:reveal|disclose|print|dump)\s+"
+        r"(?:your\s+)?(?:secret|private|hidden)\s+"
+        r"(?:keys|credentials|instructions|configuration)\b",
+        re.I,
+    ),
 )
+
 
 _SECRET_TOKEN = re.compile(
     r"(?i)(?<![A-Za-z0-9])(?:sk|rk|AKIA|ASIA|AIza|ghp|github_pat|xox[baprs]-)"
@@ -82,7 +116,10 @@ def inspect_message(message: str) -> list[SecurityFinding]:
     unique = {
         (f.category, f.start, f.end): f for f in findings
     }
-    return sorted(unique.values(), key=lambda f: (f.start, f.end, f.category))
+    return sorted(
+        unique.values(),
+        key=lambda f: (f.start, f.end, f.category)
+    )
 
 
 def validate_findings(findings) -> list[SecurityFinding]:
@@ -121,7 +158,12 @@ def inspect_output(output: str) -> list[SecurityFinding]:
     }
 
     findings = [
-        _finding(category_map[item["type"]], item["start"], item["end"], item["match"])
+        _finding(
+            category_map[item["type"]],
+            item["start"],
+            item["end"],
+            item["match"],
+        )
         for item in detect_sensitive_data(output)
     ]
     findings.extend(
@@ -130,4 +172,7 @@ def inspect_output(output: str) -> list[SecurityFinding]:
     )
 
     unique = {(f.category, f.start, f.end): f for f in findings}
-    return sorted(unique.values(), key=lambda f: (f.start, f.end, f.category))
+    return sorted(
+        unique.values(),
+        key=lambda f: (f.start, f.end, f.category)
+    )
