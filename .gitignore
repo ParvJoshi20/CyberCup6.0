@@ -30,3 +30,6 @@ Thumbs.db
 # Local data and generated artifacts
 data/*
 !data/README.md
+.history/
+
+/backend/app/security/policy.py
