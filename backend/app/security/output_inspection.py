@@ -1,32 +1,42 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from dataclasses import dataclass
-
-from app.security.detectors import inspect_output
+from app.security.detectors import SecurityFinding, inspect_output
 
 
 @dataclass(frozen=True)
 class OutputInspectionResult:
     action: str
     sanitized_output: str
-    findings: list
+    findings: list[SecurityFinding]
 
 
 def inspect_provider_output(output: str) -> OutputInspectionResult:
-    """Inspect the model output and fail closed on secret-like output."""
     findings = inspect_output(output)
-    if not findings:
-        return OutputInspectionResult(action="ALLOW", sanitized_output=output, findings=[])
 
-    if any(finding.category in {"output_api_key"} for finding in findings):
+    if not findings:
+        return OutputInspectionResult("ALLOW", output, [])
+
+    # Never return output containing a detected credential-like token.
+    if any(f.category == "output_api_key" for f in findings):
         return OutputInspectionResult(
-            action="BLOCK",
-            sanitized_output="Response blocked by output inspection.",
-            findings=findings,
+            "BLOCK", "Response blocked by output inspection.", findings
         )
 
-    sanitized_output = output
-    for finding in findings:
-        if finding.category in {"output_email", "output_phone"}:
-            sanitized_output = sanitized_output.replace(" ", " ")
-    return OutputInspectionResult(action="REDACT", sanitized_output="Response blocked by output inspection.", findings=findings)
+    placeholders = {
+        "output_email": "[REDACTED_EMAIL]",
+        "output_phone": "[REDACTED_PHONE]",
+        "output_payment_card": "[REDACTED_PAYMENT_CARD]",
+        "output_pan": "[REDACTED_PAN]",
+        "output_aadhaar": "[REDACTED_AADHAAR]",
+    }
+
+    sanitized = output
+    # Replace from right to left so earlier offsets remain valid.
+    for finding in sorted(findings, key=lambda f: (f.start, f.end), reverse=True):
+        replacement = placeholders.get(
+            finding.category, "[REDACTED_SENSITIVE_DATA]"
+        )
+        sanitized = sanitized[:finding.start] + replacement + sanitized[finding.end:]
+
+    return OutputInspectionResult("REDACT", sanitized, findings)

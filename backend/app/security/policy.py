@@ -7,7 +7,7 @@ AI providers, log input, or persist sensitive data.
 from dataclasses import dataclass
 from typing import Literal, TypedDict
 
-from backend.app.security.detector import detect_sensitive_data
+from app.security.detector import detect_sensitive_data
 
 
 PolicyAction = Literal["allow", "mask", "block"]
@@ -114,3 +114,47 @@ def apply_policy(
             else "No sensitive-data candidates detected."
         ),
     )
+
+def decide_policy(message: str, findings):
+    """Translate detector findings into the chat endpoint's policy contract."""
+    from dataclasses import dataclass
+    from app.security.detectors import validate_findings
+
+    @dataclass(frozen=True)
+    class ChatPolicyDecision:
+        action: str
+        sanitized_message: str
+
+    if not isinstance(message, str):
+        raise TypeError("message must be a string")
+
+    validate_findings(findings)
+
+    for finding in findings:
+        if finding.end > len(message):
+            raise ValueError("Finding is outside the message")
+        if message[finding.start:finding.end] != finding.match:
+            raise ValueError("Finding does not match the original message")
+
+    categories = {finding.category for finding in findings}
+
+    # Fail closed for credential-like tokens, payment-card candidates,
+    # and prompts explicitly requesting hidden credentials.
+    if categories.intersection({
+        "api_key_candidate",
+        "payment_card_candidate",
+        "credential_request",
+    }):
+        return ChatPolicyDecision("BLOCK", "")
+
+    result = apply_policy(message, "mask")
+    if not result.allowed or result.safe_text is None:
+        return ChatPolicyDecision("BLOCK", "")
+
+    if categories.intersection({
+        "email", "phone_candidate", "pan_candidate", "aadhaar_candidate",
+        "prompt_injection",
+    }):
+        return ChatPolicyDecision("SANITIZE", result.safe_text)
+
+    return ChatPolicyDecision("ALLOW", message)

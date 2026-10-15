@@ -32,5 +32,4 @@ data/*
 !data/README.md
 .history/
 
-/backend/app/security/detectors.py
 /backend/app/security/policy.py
