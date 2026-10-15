@@ -1,5 +1,19 @@
-fastapi
-uvicorn[standard]
-pydantic
-pytest
-httpx
+# AegisGate backend — Python dependencies
+#
+# Pinned to minor version ranges so `pip install -r requirements.txt` is
+# repeatable while still allowing patch-level security updates.
+
+# Web framework and ASGI server
+fastapi>=0.111.0,<0.200.0
+uvicorn[standard]>=0.29.0,<1.0.0
+
+# Data validation (Pydantic v2 is required; the v2-style validators used in
+# schemas.py are NOT compatible with Pydantic v1).
+pydantic>=2.7.0,<3.0.0
+
+# Testing
+pytest>=8.2.0,<10.0.0
+# httpx is required by FastAPI TestClient; newer FastAPI versions (>=0.140)
+# recommend httpx2, but httpx 0.28+ is also accepted.  Use whichever resolves:
+httpx>=0.27.0,<1.0.0
+anyio>=4.3.0,<5.0.0            # Async runtime used internally by httpx / starlette
