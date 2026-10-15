@@ -124,9 +124,9 @@ async def chat_endpoint(
     safe_message = decision.sanitized_message
 
     if policy_action == "BLOCK":
-        safe_findings = [
+        safe_findings = list(dict.fromkeys(
             finding.safe_explanation for finding in findings
-        ]
+        ))
 
         final_event = audit_logger.log_event(
             request_id=request_id,

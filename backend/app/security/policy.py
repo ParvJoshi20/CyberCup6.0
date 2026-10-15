@@ -144,6 +144,7 @@ def decide_policy(message: str, findings):
         "api_key_candidate",
         "payment_card_candidate",
         "credential_request",
+        "prompt_injection",
     }):
         return ChatPolicyDecision("BLOCK", "")
 
