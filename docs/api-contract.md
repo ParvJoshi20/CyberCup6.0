@@ -159,7 +159,7 @@ The following are future capabilities and must not be called by the frontend as 
 | Permission-filtered document retrieval | Not implemented |
 | Persistent audit queries | Not implemented |
 
-Dashboard panels for these features may use clearly labeled mock or demonstration data until the backend implements corresponding contracts.
+Frontend pages for these features should use actual response fields saved in the browser when available and honest empty/unavailable states otherwise. They should not add fabricated business records or operational metrics.
 
 ## 10. Frontend integration requirements
 
@@ -168,7 +168,7 @@ Dashboard panels for these features may use clearly labeled mock or demonstratio
 - Read exact response types from the live OpenAPI schema.
 - Handle non-success HTTP responses and structured errors.
 - Display security findings without exposing raw sensitive data.
-- Distinguish live API results from demo-only dashboard data.
+- Distinguish the current API response from browser-local copies; do not imply that local copies are server-side history.
 - Do not assume that a submitted `use_rag` value triggers retrieval.
 - Do not assume audit events are persisted or can be queried through a dedicated endpoint.
 - Do not imply that users are authenticated or authorized by the current API.

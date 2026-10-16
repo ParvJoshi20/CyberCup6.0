@@ -16,7 +16,7 @@ This document is the implementation brief for the frontend. The existing backend
 - Build a chat playground that integrates with the implemented backend.
 - Visualize security findings and request outcomes.
 - Provide clear loading, success, empty, and error states.
-- Use clearly labeled demo data for dashboard sections that do not yet have backend endpoints.
+- Use actual API response records saved locally for derived views; show honest empty or unavailable states when no data exists.
 - Keep frontend components, API utilities, and types organized and maintainable.
 
 ### Strict backend boundary
@@ -31,7 +31,7 @@ The following backend capabilities are not currently implemented:
 - Dedicated audit-query and evaluation endpoints.
 - Real external AI-provider integration.
 
-Do not create frontend behavior that falsely suggests these features are operational. Use demo data where necessary and label it clearly.
+Do not create frontend behavior that falsely suggests these features are operational. Do not add fabricated business records to make a page look populated; use locally saved actual API responses or an honest empty/unavailable state.
 
 ## 3. Visual direction
 
@@ -123,7 +123,7 @@ Include visual elements inspired by the reference images:
 - A recent security events table.
 - Compact status summaries and useful empty states.
 
-**Data integrity requirement:** Until real endpoints exist for these metrics, mark the dashboard data as `DEMO DATA` or `ILLUSTRATIVE`. Do not invent live backend metrics or claim that these values are persistent audit records.
+**Data integrity requirement:** Derive dashboard values only from actual backend responses saved in the browser. Do not invent sample metrics, trends, event records, or audit history. When the local archive has no usable data, show an empty or unavailable state.
 
 The dashboard may include a backend connection indicator driven by `GET /health`, but that indicator only confirms that the API health endpoint responds.
 
@@ -171,7 +171,7 @@ Create a findings exploration page with:
 
 The current chat response includes `safe_findings`. Use those actual findings when available.
 
-Do not present hardcoded findings as live backend results. If a richer historical findings feed is shown, label it as demo data because there is no dedicated findings-history API in the current backend.
+Do not present hardcoded findings as live backend results. Show only actual `safe_findings` values captured from successful chat responses and saved locally. There is no dedicated findings-history API.
 
 Avoid displaying raw sensitive values. Prefer redacted previews, category names, safe excerpts, and request identifiers.
 
@@ -187,7 +187,7 @@ Possible components include:
 - A selected-signal details panel.
 - A compact event list.
 
-Until real historical signals are provided by the backend, all example events and charts must be labeled as illustrative demo data. Do not imply that external threat intelligence, anomaly detection, or third-party connectors are integrated.
+Show only actual safe findings and response metadata captured from successful chat responses. When none exist, show an empty state. Do not imply that external threat intelligence, anomaly detection, or third-party connectors are integrated.
 
 ### E. Audit Trail
 
@@ -201,13 +201,13 @@ Create a page layout suitable for future audit integration, including:
 
 The current audit logger stores events in memory, and no dedicated audit-query endpoint is implemented. Therefore, do not claim that this page shows a complete or persistent audit history.
 
-Use an unmistakable demo label for sample rows, or provide a well-designed empty/coming-soon state.
+Show only actual `audit_event` objects returned with chat responses and captured in the browser. Label this as a partial local archive, not complete server-side auditing. When none exist, show an empty state.
 
 ### F. Evaluation Lab
 
 Create a future-facing interface for security test cases, evaluation summaries, and outcome visualization.
 
-The page can show clearly labeled sample scenarios and illustrative results, but must not claim to execute a backend evaluation unless an implemented endpoint supports it.
+Do not show fabricated scenarios, outcomes, or scores. If no evaluation runner or endpoint is implemented, explain that the capability is unavailable.
 
 Keep the distinction between static demonstration content and actual execution visible.
 
@@ -314,7 +314,7 @@ Avoid unnecessary dependencies. Reuse existing packages when suitable and add ne
 - Keep text and status indicators readable in the dark theme.
 - Add useful tooltips only where they improve understanding.
 - Avoid animation that interferes with usability.
-- Make demo data clearly distinguishable from live results.
+- Distinguish the current API response from the browser's local archive; do not mix either with fabricated records.
 
 ## 9. Implementation sequence
 
@@ -322,13 +322,13 @@ Build in this order:
 
 1. Inspect the existing frontend structure, package manager, framework, and current branch.
 2. Establish the theme, typography, shared components, sidebar, and top navigation.
-3. Implement the dashboard layout with clearly labeled demo data.
+3. Implement dashboard summaries from locally saved actual API responses and honest empty states.
 4. Build the chat playground and integrate it with the real `/chat` endpoint.
-5. Implement findings, threat signals, audit, and evaluation pages with honest demo/empty states.
+5. Implement findings, threat signals, and audit from actual locally saved API response fields; make evaluation availability explicit.
 6. Add responsive behavior and interaction details.
 7. Run the available frontend lint, type-check, build, and test commands.
 8. Fix integration issues without changing backend behavior.
-9. Update frontend setup documentation and report what is functional versus illustrative.
+9. Update frontend setup documentation and report the exact API and local storage sources used.
 
 ## 10. Acceptance criteria
 
@@ -341,7 +341,7 @@ The frontend is ready for review when:
 - The chat playground successfully calls `POST /chat` when the backend is running.
 - The UI displays real chat response and security metadata from the API.
 - Unsupported endpoints are not treated as available.
-- Demo data is clearly labeled.
+- No fabricated business records or operational metrics are shown.
 - Errors and backend unavailability are handled gracefully.
 - Sensitive values are not unnecessarily exposed in the UI.
 - Existing backend files and security behavior remain unchanged.

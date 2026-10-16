@@ -26,10 +26,10 @@ function parseChatResponse(value: unknown): ChatResponse | undefined {
   if (!isRecord(value) || !isRecord(value.security)) return undefined;
 
   const { security } = value;
-  const provider = value.provider === undefined ? null : value.provider;
-  const securityFindings = security.findings === undefined ? [] : security.findings;
-  const safeFindings = value.safe_findings === undefined ? [] : value.safe_findings;
-  const auditEvent = value.audit_event === undefined ? {} : value.audit_event;
+  const provider = value.provider;
+  const securityFindings = security.findings;
+  const safeFindings = value.safe_findings;
+  const auditEvent = value.audit_event;
 
   if (typeof value.request_id !== "string"
     || (typeof provider !== "string" && provider !== null)

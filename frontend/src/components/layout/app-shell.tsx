@@ -2,26 +2,29 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { checkBackendHealth, type BackendHealth } from "@/lib/api/health";
 
 const navigation = [
   { label: "Dashboard", href: "/", icon: "grid" },
-  { label: "Chat playground", href: "/chat", icon: "chat" },
-  { label: "Security findings", href: "/findings", icon: "shield" },
-  { label: "Threat signals", href: "/threats", icon: "pulse" },
-  { label: "Audit trail", href: "/audit", icon: "list" },
-  { label: "Evaluation lab", href: "/evaluations", icon: "flask" },
+  { label: "Chat", href: "/chat", icon: "chat" },
+  { label: "Findings", href: "/findings", icon: "search" },
+  { label: "Threats", href: "/threats", icon: "shield" },
+  { label: "Audit", href: "/audit", icon: "list" },
+  { label: "Evaluation", href: "/evaluations", icon: "flask" },
+  { label: "Local data", href: "/settings", icon: "settings" },
 ];
 
 function Icon({ name }: { name: string }) {
-  const common = { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.7, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true as const };
+  const common = { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.7, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true as const };
   const paths: Record<string, React.ReactNode> = {
     grid: <><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></>,
     chat: <><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-9.5a7.5 7.5 0 0 1 15 0Z"/><path d="M8 11h.01M12 11h.01M16 11h.01"/></>,
-    shield: <><path d="M12 3 20 6v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-3Z"/><path d="m9 12 2 2 4-4"/></>,
-    pulse: <><path d="M3 12h4l3-8 4 16 3-8h4"/></>,
+    search: <><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.3 4.3"/><path d="M8 10.8h5.6M10.8 8v5.6"/></>,
+    shield: <><path d="M12 3 20 6v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-3Z"/><path d="M12 8v4M12 16h.01"/></>,
     list: <><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01"/></>,
     flask: <><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M8 15h8"/></>,
+    settings: <><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.1 1.9-2 3.4-2.1-.5a8 8 0 0 1-1.8 1l-.4 2.1h-4l-.4-2.1a8 8 0 0 1-1.8-1l-2.1.5-2-3.4 1.1-1.9A8 8 0 0 1 5 12l-1.8-1.2 2-3.4 2.1.5a8 8 0 0 1 1.8-1L9.5 4h4l.4 2.9a8 8 0 0 1 1.8 1l2.1-.5 2 3.4L18 12a8 8 0 0 1 1.4 3Z" transform="translate(0 -2) scale(.9)"/></>,
   };
   return <svg {...common}>{paths[name]}</svg>;
 }
@@ -29,43 +32,48 @@ function Icon({ name }: { name: string }) {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const current = navigation.find((item) => item.href === pathname) ?? navigation[0];
+  const [apiHealth, setApiHealth] = useState<BackendHealth>("checking");
 
-  return (
-    <div className="app-shell">
-      <a className="skip-link" href="#main-content">Skip to main content</a>
-      <button className="mobile-menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="primary-navigation" onClick={() => setMenuOpen(!menuOpen)}>
-        <span className="sr-only">{menuOpen ? "Close navigation" : "Open navigation"}</span>
-        <span aria-hidden="true">{menuOpen ? "×" : "☰"}</span>
-      </button>
-      <aside id="primary-navigation" className={`sidebar ${menuOpen ? "sidebar-open" : ""}`} aria-label="Primary navigation">
+  useEffect(() => {
+    let isCurrent = true;
+    void checkBackendHealth().then((health) => {
+      if (isCurrent) setApiHealth(health);
+    });
+    return () => { isCurrent = false; };
+  }, []);
+
+  return <div className="app-shell">
+    <a className="skip-link" href="#main-content">Skip to main content</a>
+    <header className="site-header">
+      <div className="site-header-inner">
         <Link className="brand" href="/" aria-label="AegisGate home" onClick={() => setMenuOpen(false)}>
           <span className="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M16 2.8 28 7v8.1c0 7.2-5 12.3-12 14.1C9 27.4 4 22.3 4 15.1V7l12-4.2Z"/><path d="m11.2 15.8 3.1 3.1 6.7-7"/></svg></span>
           <span className="brand-type"><strong>Aegis<span>Gate</span></strong><small>AI SECURITY GATEWAY</small></span>
         </Link>
-        <div className="sidebar-label">WORKSPACE</div>
-        <nav className="nav-list">
+
+        <nav id="primary-navigation" className={`primary-navigation ${menuOpen ? "primary-navigation-open" : ""}`} aria-label="Primary navigation">
           {navigation.map((item) => {
             const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
             return <Link key={item.href} className={`nav-link ${active ? "nav-link-active" : ""}`} href={item.href} aria-current={active ? "page" : undefined} onClick={() => setMenuOpen(false)}>
-              <Icon name={item.icon} /><span>{item.label}</span>{item.href === "/chat" && <span className="nav-indicator" aria-label="Live integration priority" />}
+              <Icon name={item.icon} /><span>{item.label}</span>
             </Link>;
           })}
         </nav>
-        <div className="sidebar-bottom">
-          <div className="environment-card"><span className="environment-icon"><Icon name="shield" /></span><span><strong>Security layer</strong><small>Local workspace</small></span><span className="status-dot" aria-label="Status unknown" /></div>
-          <p className="sidebar-footnote">Access controls are not implemented.</p>
+
+        <div className="header-utilities">
+          <div className="api-status" role="status" aria-label={`Backend API ${apiHealth}`}>
+            <span className={`status-dot status-dot-${apiHealth}`} aria-hidden="true" />
+            <span><strong>LOCAL API</strong><small>{apiHealth === "available" ? "Reachable" : apiHealth === "unavailable" ? "Unavailable" : "Checking…"}</small></span>
+          </div>
+          <button className="mobile-menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="primary-navigation" onClick={() => setMenuOpen((open) => !open)}>
+            <span className="sr-only">{menuOpen ? "Close navigation" : "Open navigation"}</span>
+            <span aria-hidden="true">{menuOpen ? "×" : "☰"}</span>
+          </button>
         </div>
-      </aside>
-      {menuOpen && <button className="mobile-scrim" type="button" aria-label="Close navigation" onClick={() => setMenuOpen(false)} />}
-      <div className="main-column">
-        <header className="topbar">
-          <div className="breadcrumb"><span>Workspace</span><span className="breadcrumb-separator">/</span><strong>{current.label}</strong></div>
-          <div className="topbar-right"><span className="connection-status"><span className="status-dot status-dot-muted" />API connection not checked</span><span className="topbar-divider" /><span className="environment-label">LOCAL ENVIRONMENT</span></div>
-        </header>
-        <main id="main-content" className="main-content">{children}</main>
-        <footer className="app-footer"><span>AegisGate <span className="footer-separator">·</span> Security workspace</span><span>Frontend foundation</span></footer>
       </div>
-    </div>
-  );
+    </header>
+
+    <main id="main-content" className="main-content">{children}</main>
+    <footer className="app-footer"><span>AegisGate <span className="footer-separator">·</span> Security operations workspace</span><span>Local records are stored in this browser</span></footer>
+  </div>;
 }

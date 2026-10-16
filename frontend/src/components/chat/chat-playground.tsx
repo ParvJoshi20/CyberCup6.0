@@ -1,11 +1,15 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useMemo, useRef, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { ChatApiError, postChat } from "@/lib/api/chat";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { StatusIndicator } from "@/components/ui/status-indicator";
+import { getBrowserStorageForWrite, saveChatResponse } from "@/lib/data/local-data";
+import { useLocalData } from "@/lib/data/use-local-data";
+import type { SavedChatRecord } from "@/lib/data/local-data";
 import type { ChatRequest, ChatResponse, MockProvider } from "@/types/chat";
 import styles from "./chat-playground.module.css";
 
@@ -17,6 +21,7 @@ type ChatTurn = {
   status: TurnStatus;
   response?: ChatResponse;
   error?: { message: string; requestId?: string };
+  saveWarning?: string;
 };
 
 const MAX_MESSAGE_LENGTH = 8_000;
@@ -35,6 +40,38 @@ function countCharacters(value: string) {
   return Array.from(value).length;
 }
 
+function createLocalId(): string {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `local-${Date.now()}-${Math.trunc(performance.now())}`;
+}
+
+function turnFromStoredRecord(record: SavedChatRecord): ChatTurn {
+  return {
+    id: record.requestId,
+    submittedAt: record.submittedAt,
+    request: { message: record.message, model_id: record.providerSelection },
+    status: "success",
+    response: {
+      request_id: record.requestId,
+      provider: record.provider,
+      model_id: record.modelId,
+      response: record.response,
+      security: { action: record.policyAction, output_action: record.outputAction, findings: record.securityFindings },
+      safe_findings: record.safeFindings,
+      audit_event: record.auditEvent ? {
+        request_id: record.auditEvent.requestId,
+        provider_id: record.auditEvent.providerId,
+        categories: record.auditEvent.categories,
+        policy_action: record.auditEvent.policyAction,
+        provider_invoked: record.auditEvent.providerInvoked,
+        final_outcome: record.auditEvent.finalOutcome,
+        timestamp: record.auditEvent.timestamp,
+      } : {},
+    },
+  };
+}
+
 function TurnCard({ turn, onRetry, isBusy }: { turn: ChatTurn; onRetry: (turn: ChatTurn) => void; isBusy: boolean }) {
   const status = turn.status === "pending"
     ? { label: "PROCESSING", tone: "warning" as const }
@@ -44,7 +81,7 @@ function TurnCard({ turn, onRetry, isBusy }: { turn: ChatTurn; onRetry: (turn: C
 
   return <article className={styles.turn} aria-label={`Request ${turn.status}`}>
     <div className={styles.turnHeader}>
-      <div className={styles.turnOrigin}><span className={styles.userAvatar} aria-hidden="true">Y</span><div><strong>Your request</strong><span>{turn.submittedAt} · {turn.request.model_id} mock provider</span></div></div>
+      <div className={styles.turnOrigin}><span className={styles.userAvatar} aria-hidden="true">Y</span><div><strong>Your request</strong><span>{new Date(turn.submittedAt).toLocaleString()} · {turn.request.model_id} mock provider</span></div></div>
       <StatusIndicator label={status.label} tone={status.tone} />
     </div>
     <div className={styles.promptBubble}><p>{turn.request.message}</p></div>
@@ -53,6 +90,7 @@ function TurnCard({ turn, onRetry, isBusy }: { turn: ChatTurn; onRetry: (turn: C
       <div className={styles.responseLabel}><span className={styles.aegisMark} aria-hidden="true">A</span><div><strong>Inspected response</strong><span>Returned by the security pipeline</span></div></div>
       <p className={styles.responseText}>{turn.response.response}</p>
     </div>}
+    {turn.saveWarning && <p className={styles.resultFootnote} role="status">{turn.saveWarning}</p>}
     {turn.status === "error" && turn.error && <div className={styles.turnError} role="alert">
       <div className={styles.errorCopy}><strong>We couldn’t complete this request.</strong><p>{turn.error.message}</p>{turn.error.requestId && <small>Request ID: <code>{turn.error.requestId}</code></small>}</div>
       <Button variant="secondary" type="button" onClick={() => onRetry(turn)} disabled={isBusy}>Retry</Button>
@@ -93,30 +131,48 @@ function SecurityResult({ turn }: { turn?: ChatTurn }) {
 }
 
 export function ChatPlayground() {
+  const localData = useLocalData();
+  const savedTurns = useMemo(() => localData.chats.map(turnFromStoredRecord), [localData.chats]);
   const [draft, setDraft] = useState("");
   const [provider, setProvider] = useState<MockProvider>("echo");
-  const [turns, setTurns] = useState<ChatTurn[]>([]);
+  const [transientTurns, setTransientTurns] = useState<ChatTurn[]>([]);
   const [isPending, setIsPending] = useState(false);
   const [formError, setFormError] = useState("");
   const pendingRef = useRef(false);
+  const [conversationId] = useState(createLocalId);
+  const turns = [...savedTurns, ...transientTurns];
   const characterCount = countCharacters(draft);
   const latestTurn = turns.at(-1);
 
-  async function runRequest(id: string, request: ChatRequest) {
+  async function runRequest(id: string, request: ChatRequest, submittedAt: string) {
     if (pendingRef.current) return;
     pendingRef.current = true;
     setIsPending(true);
-    setTurns((current) => current.map((turn) => turn.id === id ? { ...turn, status: "pending", error: undefined } : turn));
+    setTransientTurns((current) => current.map((turn) => turn.id === id ? { ...turn, status: "pending", error: undefined } : turn));
 
     try {
       const response = await postChat(request);
-      setTurns((current) => current.map((turn) => turn.id === id ? { ...turn, status: "success", response, error: undefined } : turn));
+      const saved = saveChatResponse(getBrowserStorageForWrite(), {
+        request,
+        response,
+        conversationId,
+        submittedAt,
+        receivedAt: new Date().toISOString(),
+      });
+      if (saved.ok) {
+        setTransientTurns((current) => current.filter((turn) => turn.id !== id));
+      } else {
+        const saveWarning = saved.reason === "invalid-data"
+          ? "The API response is real but was not saved because existing local data needs attention in Settings."
+          : "The API response is real but browser storage could not save it. It will remain only until this page is closed.";
+        setTransientTurns((current) => current.map((turn) => turn.id === id ? { ...turn, status: "success", response, error: undefined, saveWarning } : turn));
+      }
     } catch (error) {
       const message = error instanceof ChatApiError
         ? error.status === 422 ? `Request validation failed. ${error.message}` : error.message
         : "The request failed unexpectedly. Please retry.";
       const requestId = error instanceof ChatApiError ? error.requestId : undefined;
-      setTurns((current) => current.map((turn) => turn.id === id ? { ...turn, status: "error", response: undefined, error: { message, requestId } } : turn));
+      setTransientTurns((current) => current.map((turn) => turn.id === id ? { ...turn, status: "error", response: undefined, error: { message, requestId } } : turn));
     } finally {
       pendingRef.current = false;
       setIsPending(false);
@@ -139,15 +195,15 @@ export function ChatPlayground() {
 
     setFormError("");
     const request: ChatRequest = { message, model_id: provider };
-    const id = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${turns.length}`;
-    const submittedAt = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    setTurns((current) => [...current, { id, submittedAt, request, status: "pending" }]);
+    const id = createLocalId();
+    const submittedAt = new Date().toISOString();
+    setTransientTurns((current) => [...current, { id, submittedAt, request, status: "pending" }]);
     setDraft("");
-    void runRequest(id, request);
+    void runRequest(id, request, submittedAt);
   }
 
   function retryTurn(turn: ChatTurn) {
-    void runRequest(turn.id, turn.request);
+    void runRequest(turn.id, turn.request, new Date().toISOString());
   }
 
   return <div className={styles.page}>
@@ -155,16 +211,17 @@ export function ChatPlayground() {
       eyebrow="LIVE WORKSPACE"
       title="Chat playground"
       description="Send a message through AegisGate’s input policy, mock provider, and output inspection flow."
-      action={<StatusIndicator label={isPending ? "REQUEST IN PROGRESS" : "BACKEND VIA LOCAL PROXY"} tone={isPending ? "warning" : "neutral"} />}
+      action={<StatusIndicator label={isPending ? "REQUEST IN PROGRESS" : "CHAT ENDPOINT · NOT CHECKED"} tone={isPending ? "warning" : "neutral"} />}
     />
 
     <div className={styles.providerNote}><span className={styles.providerNoteIcon} aria-hidden="true">i</span><p><strong>Mock providers only</strong><span><code>echo</code> returns a deterministic reply. <code>scripted_leaky</code> demonstrates output inspection. Retrieval is not implemented; this playground does not request RAG.</span></p></div>
+    {localData.message && <div className="storage-warning" role="status">{localData.message} <Link href="/settings">Review local data settings</Link></div>}
 
     <div className={styles.workspace}>
       <section className={styles.conversationColumn} aria-label="Chat conversation">
         <Card className={styles.conversationCard}>
-          <div className={styles.conversationHeading}><div><h2>Request trace</h2><p>Prompts are held in this page only and are not saved by the frontend.</p></div><span className={styles.inMemoryLabel}>CURRENT SESSION</span></div>
-          {turns.length === 0 ? <div className={styles.emptyConversation}><div className={styles.emptyOrb} aria-hidden="true"><span>✳</span></div><h3>Ready when you are</h3><p>Write a synthetic test message below. AegisGate will return the provider output only after its security pipeline processes the request.</p><button className={styles.samplePrompt} type="button" onClick={() => { setDraft("In one sentence, describe the purpose of AegisGate."); setFormError(""); }}>Use a sample prompt <span aria-hidden="true">↗</span></button></div> : <div className={styles.turnList} role="log" aria-label="Submitted requests and backend responses" aria-live="polite">
+          <div className={styles.conversationHeading}><div><h2>Saved request trace</h2><p>Successful API responses are kept in this browser after common sensitive patterns are redacted.</p></div><span className={styles.inMemoryLabel}>LOCAL ARCHIVE</span></div>
+          {turns.length === 0 ? <div className={styles.emptyConversation}><div className={styles.emptyOrb} aria-hidden="true"><span>✳</span></div><h3>Ready when you are</h3><p>Send a request to create an actual API result. Failed requests are not added to the saved history.</p></div> : <div className={styles.turnList} role="log" aria-label="Saved backend responses" aria-live="polite">
             {turns.map((turn) => <TurnCard key={turn.id} turn={turn} onRetry={retryTurn} isBusy={isPending} />)}
           </div>}
         </Card>
@@ -186,12 +243,12 @@ export function ChatPlayground() {
             </div>
           </form>
         </Card>
-        <p className={styles.privacyNote}>The UI keeps this conversation in memory for the current page session. The backend records audit metadata in memory; this interface does not query a history endpoint.</p>
+        <p className={styles.privacyNote}>Local records remain in this browser and can be cleared in Settings. Common credentials and personal identifiers are redacted before storage; browser storage is not a secure credential vault.</p>
       </section>
 
       <aside className={styles.securityColumn} aria-label="Security response details">
         <Card className={styles.securityCard}>
-          <div className={styles.securityHeading}><div><p className={styles.securityEyebrow}>RESPONSE INSIGHT</p><h2>Security result</h2></div><span className={styles.liveBadge}><i />LIVE API</span></div>
+          <div className={styles.securityHeading}><div><p className={styles.securityEyebrow}>RESPONSE INSIGHT</p><h2>Security result</h2></div><span className={`${styles.liveBadge} ${latestTurn?.status === "success" ? styles.responseBadge : latestTurn?.status === "pending" ? styles.pendingBadge : latestTurn?.status === "error" ? styles.errorBadge : ""}`}><i />{latestTurn?.status === "success" ? "LIVE RESPONSE" : latestTurn?.status === "pending" ? "PROCESSING" : latestTurn?.status === "error" ? "NO RESPONSE" : "POST /CHAT"}</span></div>
           <SecurityResult turn={latestTurn} />
         </Card>
         <Card className={styles.pipelineCard}>
