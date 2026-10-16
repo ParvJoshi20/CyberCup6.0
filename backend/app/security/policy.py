@@ -135,7 +135,8 @@ def decide_policy(message: str, findings):
             raise ValueError("Finding is outside the message")
         if message[finding.start:finding.end] != finding.match:
             raise ValueError("Finding does not match the original message")
-
+    
+    warning_categories = {"external_url"}
     categories = {finding.category for finding in findings}
 
     # Fail closed for credential-like tokens, payment-card candidates,
@@ -157,5 +158,8 @@ def decide_policy(message: str, findings):
         "prompt_injection",
     }):
         return ChatPolicyDecision("SANITIZE", result.safe_text)
+
+    if categories.intersection(warning_categories):
+        return ChatPolicyDecision("WARN", message)
 
     return ChatPolicyDecision("ALLOW", message)

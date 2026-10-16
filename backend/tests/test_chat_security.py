@@ -33,6 +33,36 @@ def test_harmless_request_allowed(chat_client: TestClient, provider_registry) ->
     assert body["response"] == "Hello there! How can I help?"
     assert body["provider"] == "echo"
     assert body["request_id"]
+    
+
+def test_external_url_warns_without_blocking(
+    chat_client: TestClient, provider_registry
+) -> None:
+    message = "Summarize this page: https://example.com"
+
+    response = chat_client.post(
+        "/chat",
+        json={"message": message, "model_id": "echo"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+
+    # The request is warned about, not blocked.
+    assert body["security"]["action"] == "WARN"
+    assert body["response"] == message
+
+    # The warning is safe to show to the user.
+    assert (
+        "External URL detected. Treat linked content as untrusted."
+        in body["safe_findings"]
+    )
+
+    # The provider was invoked and the audit event records the warning.
+    assert provider_registry.providers["echo"].call_count == 1
+    assert body["audit_event"]["provider_invoked"] is True
+    assert body["audit_event"]["final_outcome"] == "WARNED"
+
 
 
 def test_api_key_like_input_is_blocked(chat_client: TestClient, provider_registry) -> None:

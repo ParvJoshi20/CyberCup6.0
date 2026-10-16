@@ -66,24 +66,34 @@ _CREDENTIAL_REQUEST = re.compile(
     re.I,
 )
 
+_EXTERNAL_URL = re.compile(
+    r"https?://[^\s<>\"']+",
+    re.I,
+)
+
 _ALLOWED_CATEGORIES = {
     "email", "phone_candidate", "payment_card_candidate",
     "pan_candidate", "aadhaar_candidate", "api_key_candidate",
-    "prompt_injection", "credential_request",
+    "prompt_injection", "credential_request", "external_url",
     "output_email", "output_phone", "output_payment_card",
     "output_pan", "output_aadhaar", "output_api_key",
 }
+
 
 
 def _finding(category: str, start: int, end: int, match: str) -> SecurityFinding:
     explanations = {
         "prompt_injection": "Potential prompt injection detected.",
         "credential_request": "Potential request for secret credentials detected.",
+        "external_url": (
+            "External URL detected. Treat linked content as untrusted."
+        ),
     }
     explanation = explanations.get(
         category, f"Potential sensitive data detected: {category}."
     )
     return SecurityFinding(category, explanation, start, end, match)
+
 
 
 def inspect_message(message: str) -> list[SecurityFinding]:
@@ -98,6 +108,7 @@ def inspect_message(message: str) -> list[SecurityFinding]:
     for pattern, category in (
         (_SECRET_TOKEN, "api_key_candidate"),
         (_CREDENTIAL_REQUEST, "credential_request"),
+        (_EXTERNAL_URL, "external_url"),
     ):
         for match in pattern.finditer(message):
             findings.append(
@@ -111,6 +122,16 @@ def inspect_message(message: str) -> list[SecurityFinding]:
                     "prompt_injection", match.start(), match.end(), match.group(0)
                 )
             )
+    
+    for match in _EXTERNAL_URL.finditer(message):
+        findings.append(
+        _finding(
+            "external_url",
+            match.start(),
+            match.end(),
+            match.group(0),
+        )
+    )
 
     # Deduplicate overlapping duplicate detections of the same span/category.
     unique = {
