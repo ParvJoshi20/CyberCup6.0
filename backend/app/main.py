@@ -21,6 +21,7 @@ import logging
 from fastapi import FastAPI
 
 from app.api.chat import router as chat_router
+from app.api.reviews import router as reviews_router
 from app.errors import register_error_handlers
 from app.schemas import HealthResponse
 
@@ -57,6 +58,7 @@ app = FastAPI(
 # Attach standardised error handlers (422, 404, 500, and general HTTP errors).
 register_error_handlers(app)
 app.include_router(chat_router)
+app.include_router(reviews_router)
 
 logger.info("AegisGate backend initialised (version %s).", app.version)
 

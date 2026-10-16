@@ -62,7 +62,7 @@ class ErrorResponse(BaseModel):
 class SecuritySummary(BaseModel):
     """Safe security summary returned with any chat response."""
 
-    action: str = Field(..., description="Policy action, such as ALLOW, SANITIZE, or BLOCK.")
+    action: str = Field(..., description="Policy action, such as ALLOW, WARN, SANITIZE, or BLOCK.")
     output_action: str = Field(default="ALLOW", description="Output-inspection action taken before returning the response.")
     findings: list[str] = Field(default_factory=list, description="Safe-to-display explanations only.")
 
