@@ -110,7 +110,10 @@ _PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
 # Spoken / obfuscated digit sequences. These are intentionally bounded to
 # contiguous digit-word runs; ordinary prose is not converted wholesale.
 _DIGIT_TOKEN = re.compile(
-    r"(?i)(?<!\w)(?:zero|oh|one|two|three|four|five|six|seven|eight|nine|[0-9])(?!\w)"
+    r"(?i)(?<![a-z])"
+    r"(?:zero|oh|one|two|three|four|five|six|seven|eight|nine)"
+    r"(?![a-z])"
+    r"|[0-9]"
 )
 _DIGIT_GAP = re.compile(r"^[\s,;:.\-–—…]*$")
 

@@ -122,6 +122,13 @@ async def chat_endpoint(
 
     policy_action = decision.action
     safe_message = decision.sanitized_message
+    
+    if policy_action == "WARN":
+        safe_findings = list(dict.fromkeys(
+            finding.safe_explanation
+            for finding in findings
+            if finding.category == "external_url"
+        ))
 
     if policy_action == "BLOCK":
         safe_findings = list(dict.fromkeys(
@@ -226,14 +233,16 @@ async def chat_endpoint(
             output_action = "BLOCK"
 
         if output_findings:
-            safe_findings = [
-                finding.safe_explanation
-                for finding in output_findings
-            ]
-        elif findings:
-            safe_findings = [
+            safe_findings = list(dict.fromkeys(
+                safe_findings + [
+                    finding.safe_explanation
+                    for finding in output_findings
+                ]
+            ))
+        elif findings and not safe_findings:
+            safe_findings = list(dict.fromkeys(
                 finding.safe_explanation for finding in findings
-            ]
+            ))
 
     except Exception as exc:
         logger.error(
@@ -264,8 +273,11 @@ async def chat_endpoint(
         categories=audit_categories,
         policy_action=policy_action,
         provider_invoked=provider_invoked,
-        final_outcome="BLOCKED" if blocked_output else "ALLOW",
-    )
+               final_outcome=(
+            "BLOCKED" if blocked_output
+            else "WARNED" if policy_action == "WARN"
+            else "ALLOW"
+        ))
 
     if not safe_findings:
         safe_findings = ["No unsafe content detected."]

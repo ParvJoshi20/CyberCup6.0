@@ -14,6 +14,7 @@ class AuditEvent:
     provider_invoked: bool = False
     final_outcome: str = "ALLOW"
     timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    actor_id: str | None = None
 
     def model_dump(self) -> dict[str, Any]:
         return {
@@ -24,6 +25,7 @@ class AuditEvent:
             "provider_invoked": self.provider_invoked,
             "final_outcome": self.final_outcome,
             "timestamp": self.timestamp,
+            "actor_id": self.actor_id,
         }
 
 
@@ -31,7 +33,7 @@ class AuditLogger:
     def __init__(self) -> None:
         self.events: list[AuditEvent] = []
 
-    def log_event(self, *, request_id: str, provider_id: str | None, categories: list[str], policy_action: str, provider_invoked: bool, final_outcome: str) -> AuditEvent:
+    def log_event(self, *, request_id: str, provider_id: str | None, categories: list[str], policy_action: str, provider_invoked: bool, final_outcome: str, actor_id: str | None = None) -> AuditEvent:
         event = AuditEvent(
             request_id=request_id,
             provider_id=provider_id,
@@ -39,6 +41,7 @@ class AuditLogger:
             policy_action=policy_action,
             provider_invoked=provider_invoked,
             final_outcome=final_outcome,
+            actor_id=actor_id,
         )
         self.events.append(event)
         return event
